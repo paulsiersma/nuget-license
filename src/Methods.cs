@@ -456,21 +456,23 @@ namespace NugetUtility
             if (_packageOptions.UniqueOnly)
             {
                 libraryInfos = libraryInfos
-                    .GroupBy(x => new { x.PackageName, x.PackageVersion })
+                    .GroupBy(x => new { x.PackageName })
                     .Select(g =>
                     {
                         var first = g.First();
                         return new LibraryInfo
                         {
                             PackageName = first.PackageName,
-                            PackageVersion = first.PackageVersion,
+                            PackageVersion = string.Join(", <br/> ", g.Select(p => p.PackageVersion).Distinct()),
                             PackageUrl = first.PackageUrl,
                             Copyright = first.Copyright,
                             Authors = first.Authors,
-                            Description = first.Description,
+                            Description = first.Description.Replace("\r\n", ""),
                             LicenseType = first.LicenseType,
                             LicenseUrl = first.LicenseUrl,
-                            Projects = _packageOptions.IncludeProjectFile ? string.Join(";", g.Select(p => p.Projects)) : null
+                            Projects = _packageOptions.IncludeProjectFile
+                                ? string.Join(" <br/> ", g.Select(p => $"- {Path.GetFileName(p.Projects)}"))
+                                : null
                         };
                     })
                     .ToList();
@@ -1202,11 +1204,13 @@ namespace NugetUtility
             File.WriteAllText(GetOutputFilename("licenses.txt"), sb.ToString());
         }
 
-        private static readonly string[] StandardMdColumns = { "Reference", "Version", "License Type", "License" };
+        private static readonly string[] StandardMdColumns =
+            { "Package", "Description", "Versions", "License Type", "License" };
 
         private static readonly Func<LibraryInfo, object>[] StandardMdValueSelectors =
         {
             a => a.PackageName ?? "---",
+            a => a.Description ?? "---",
             a => a.PackageVersion ?? "---",
             a => a.LicenseType ?? "---",
             a => a.LicenseUrl ?? "---"
@@ -1214,12 +1218,12 @@ namespace NugetUtility
 
         public void SaveAsMarkdown(List<LibraryInfo> libraries)
         {
-            if (libraries is null) { throw new ArgumentNullException(nameof(libraries)); }t
+            if (libraries is null) { throw new ArgumentNullException(nameof(libraries)); }
             if (!libraries.Any()) { return; }
 
             WriteOutput(Environment.NewLine + "References:", logLevel: LogLevel.Always);
             var columns = _packageOptions.IncludeProjectFile
-                ? StandardMdColumns.Append("Project").ToArray()
+                ? StandardMdColumns.Append("Projects").ToArray()
                 : StandardMdColumns;
 
             var valueSelectors = _packageOptions.IncludeProjectFile

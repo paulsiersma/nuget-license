@@ -5,8 +5,12 @@
     },
     "WSL": {
       "commandName": "WSL2",
-      "environmentVariables": {},
       "distributionName": ""
+    },
+    "Profile 1": {
+      "commandName": "Project",
+      "commandLineArgs": "--input src\\ServiceManagement.Fines.sln --md --include-project-file --unique",
+      "workingDirectory": "C:\\Dev\\get-license-information\\fleetops-fines"
     }
   }
 }
